@@ -1,0 +1,21 @@
+[project]
+name = "llm"
+version = "0.1.0"
+description = "Build a GPT from an empty file up to GRPO, one verified level at a time."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "numpy>=2.5.3",
+    "regex>=2026.9.10",
+    "tiktoken>=0.14.0",
+    "torch>=2.14.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.26,<0.10.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
