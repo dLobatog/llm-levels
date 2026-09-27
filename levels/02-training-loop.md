@@ -33,6 +33,8 @@ uv run pytest tests/test_level02_training_loop.py -q
 uv run ruff check src
 ```
 
+One section at a time: add `-k batch`, `-k model` or `-k learn`.
+
 The tests check:
 - **batches:** shapes, the shift by one, windows that are real slices of the data, every valid start reachable and none running off the end, and reproducibility with a seed;
 - **the model:** the untrained loss is ln(V) ± 0.05, the loss equals the mean negative log-likelihood, the prediction depends only on the current token, and generation keeps the prompt and is reproducible;

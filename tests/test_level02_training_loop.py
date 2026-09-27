@@ -58,7 +58,7 @@ def test_batch_shapes_and_dtype():
     assert x.dtype == torch.long and y.dtype == torch.long
 
 
-def test_targets_are_inputs_shifted_by_one():
+def test_batch_targets_are_inputs_shifted_by_one():
     # With data 0, 1, 2, ..., every window is a run of consecutive numbers
     # and every target is its input plus one.
     x, y = data.get_batch(torch.arange(1000), 16, 12, seeded(0))
@@ -67,7 +67,7 @@ def test_targets_are_inputs_shifted_by_one():
     assert torch.equal(y, x + 1)
 
 
-def test_windows_come_from_the_data():
+def test_batch_windows_come_from_the_data():
     ids = torch.randint(0, 50, (300,), generator=seeded(1))
     x, y = data.get_batch(ids, 8, 10, seeded(2))
     windows = ids.unfold(0, 11, 1)  # every contiguous run of 11 tokens
@@ -78,7 +78,7 @@ def test_windows_come_from_the_data():
         )
 
 
-def test_every_start_is_used_and_none_runs_off_the_end():
+def test_batch_every_start_is_used_and_none_runs_off_the_end():
     # 20 tokens and windows of 8: starts 0..11 are valid, since the last
     # target sits one past the window.
     ids = torch.arange(20)
@@ -90,7 +90,7 @@ def test_every_start_is_used_and_none_runs_off_the_end():
     assert starts == set(range(12)), f"starts used: {sorted(starts)}"
 
 
-def test_exactly_one_window_fits():
+def test_batch_exactly_one_window_fits():
     x, y = data.get_batch(torch.arange(9), 3, 8, seeded(0))
     assert torch.equal(x, torch.arange(8).repeat(3, 1))
     assert torch.equal(y, torch.arange(1, 9).repeat(3, 1))
@@ -103,7 +103,7 @@ def test_same_generator_same_batch():
     assert torch.equal(a[0], b[0]) and torch.equal(a[1], b[1])
 
 
-def test_too_little_data_raises():
+def test_batch_too_little_data_raises():
     with pytest.raises(ValueError):
         data.get_batch(torch.arange(8), 2, 8, seeded(0))
 
@@ -111,14 +111,14 @@ def test_too_little_data_raises():
 # The bigram model ────────────────────────────────────────────────────────────
 
 
-def test_logits_shape_and_no_loss_without_targets():
+def test_model_logits_shape_and_no_loss_without_targets():
     model = bigram.Bigram(30)
     logits, loss = model(torch.randint(0, 30, (2, 5), generator=seeded(0)))
     assert logits.shape == (2, 5, 30)
     assert loss is None
 
 
-def test_untrained_loss_is_ln_vocab():
+def test_model_initial_loss_is_ln_vocab():
     torch.manual_seed(0)
     model = bigram.Bigram(256)
     ids = torch.randint(0, 256, (16, 32), generator=seeded(0))
@@ -130,7 +130,7 @@ def test_untrained_loss_is_ln_vocab():
     )
 
 
-def test_loss_is_mean_negative_log_likelihood():
+def test_model_loss_is_mean_negative_log_likelihood():
     model = bigram.Bigram(40)
     scramble(model)
     ids = torch.randint(0, 40, (3, 7), generator=seeded(0))
@@ -141,7 +141,7 @@ def test_loss_is_mean_negative_log_likelihood():
     torch.testing.assert_close(loss, expected)
 
 
-def test_prediction_depends_only_on_the_current_token():
+def test_model_prediction_depends_only_on_the_current_token():
     model = bigram.Bigram(20)
     scramble(model)
     logits, _ = model(torch.tensor([[5, 7, 5, 9, 5]]))
@@ -152,7 +152,7 @@ def test_prediction_depends_only_on_the_current_token():
     torch.testing.assert_close(a[0, -1], b[0, -1])
 
 
-def test_generate_keeps_the_prompt_and_adds_tokens():
+def test_model_generate_keeps_the_prompt_and_adds_tokens():
     model = bigram.Bigram(25)
     scramble(model)
     prompt = torch.randint(0, 25, (3, 4), generator=seeded(0))
@@ -163,7 +163,7 @@ def test_generate_keeps_the_prompt_and_adds_tokens():
     assert not out.requires_grad
 
 
-def test_generate_is_reproducible():
+def test_model_generate_is_reproducible():
     model = bigram.Bigram(25)
     scramble(model)
     prompt = torch.zeros(2, 1, dtype=torch.long)
@@ -175,14 +175,14 @@ def test_generate_is_reproducible():
 # The training loop ───────────────────────────────────────────────────────────
 
 
-def test_train_returns_one_loss_per_step():
+def test_learn_returns_one_loss_per_step():
     model = bigram.Bigram(10)
     losses = training.train(model, cycle_ids(), 25, 4, 8, 0.1, seeded(0))
     assert len(losses) == 25
     assert all(isinstance(loss, float) for loss in losses)
 
 
-def test_loss_starts_at_ln_vocab_and_drops():
+def test_learn_loss_starts_at_ln_vocab_and_drops():
     # 0, 1, ..., 9, 0, 1, ... : every next token is fully determined.
     torch.manual_seed(0)
     model = bigram.Bigram(10)
@@ -194,7 +194,7 @@ def test_loss_starts_at_ln_vocab_and_drops():
     assert final < 0.05, f"loss only got down to {final:.3f}"
 
 
-def test_training_is_reproducible():
+def test_learn_is_reproducible():
     runs = []
     for _ in range(2):
         torch.manual_seed(0)
@@ -204,7 +204,7 @@ def test_training_is_reproducible():
     assert runs[0] == runs[1]
 
 
-def test_trained_model_follows_the_cycle():
+def test_learn_then_generate_follows_the_cycle():
     torch.manual_seed(0)
     model = bigram.Bigram(10)
     training.train(model, cycle_ids(), 400, 16, 16, 0.1, seeded(0))
@@ -213,7 +213,7 @@ def test_trained_model_follows_the_cycle():
     assert follows >= 36, f"only {follows}/40 steps followed the cycle: {out}"
 
 
-def test_bigram_reaches_the_best_possible_bigram_loss():
+def test_learn_reaches_the_best_possible_bigram_loss():
     # The best any bigram can do on this text is the entropy of the next byte
     # given the current one, computed by counting pairs.
     ids = text_ids()
