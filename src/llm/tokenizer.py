@@ -14,11 +14,10 @@ Typical usage example:
 """
 
 from __future__ import annotations
-import itertools
 
-from ast import Tuple
+import collections
 from collections.abc import Mapping, Sequence, Set
-from collections import Counter
+import itertools
 
 import regex
 import tiktoken
@@ -115,7 +114,6 @@ class BPETokenizer:
         Returns:
             A tokenizer with the learned ranks and no special tokens.
         """
-
         chunks = text
         if pattern:
             chunks = regex.findall(pattern, text)
@@ -130,9 +128,9 @@ class BPETokenizer:
         encoded_chunks = [list(chunk.encode("utf-8")) for chunk in chunks]
 
         while len(vocab) < vocab_size:
-            counter = Counter()
+            counter = collections.Counter()
             for chunk in encoded_chunks:
-                counter.update(zip(chunk, chunk[1:]))
+                counter.update(zip(chunk, chunk[1:], strict=False))
 
             if not counter:
                 break
