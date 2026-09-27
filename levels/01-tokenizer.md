@@ -32,6 +32,7 @@ The vocabulary maps bytes to ids, the same representation `tiktoken` uses. A low
 
 ```bash
 uv run pytest tests/test_level01_tokenizer.py -q
+uv run ruff check src/llm/tokenizer.py
 ```
 
 The tests check:
@@ -41,6 +42,8 @@ The tests check:
 - round trips on text the tokenizer never saw;
 - **exact equality with `tiktoken`'s GPT-2 ids** on several hundred strings: English, code, numbers, whitespace runs, contractions, accents, CJK and emoji;
 - special-token handling.
+
+Ruff must be clean too. The code follows the Google Python Style Guide (see the README).
 
 ## Hints (read only if stuck)
 

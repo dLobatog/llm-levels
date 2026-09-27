@@ -1,6 +1,11 @@
-"""Where am I? A level is unlocked when every test in its file passes.
+"""Shows progress: a level is unlocked when every test in its file passes.
 
-Usage: uv run python ladder.py
+Also reports style: the code should follow the Google Python Style Guide,
+checked by ruff with the configuration in pyproject.toml.
+
+Typical usage example:
+
+    uv run python ladder.py
 """
 
 import pathlib
@@ -25,37 +30,68 @@ LEVELS = [
 ]
 
 
+def _run(*args: str) -> str:
+    """Runs a Python module from the repo root and returns its stdout."""
+    command = [sys.executable, "-m", *args]
+    result = subprocess.run(
+        command, cwd=ROOT, capture_output=True, text=True, check=False
+    )
+    return result.stdout
+
+
 def run_tests(path: str) -> tuple[int, int]:
-    """Return (passed, total) for one test file."""
-    out = subprocess.run(
-        [sys.executable, "-m", "pytest", "-q", "--no-header", "-p", "no:cacheprovider", path],
-        cwd=ROOT, capture_output=True, text=True,
-    ).stdout
-    counts = {k: int(n) for n, k in re.findall(r"(\d+) (passed|failed|error|errors)", out)}
+    """Runs one test file.
+
+    Args:
+        path: Test file, relative to the repo root.
+
+    Returns:
+        The number of tests that passed and the total number of tests.
+    """
+    out = _run("pytest", "-q", "--no-header", "-p", "no:cacheprovider", path)
+    pattern = r"(\d+) (passed|failed|error|errors)"
+    counts = {kind: int(count) for count, kind in re.findall(pattern, out)}
     passed = counts.get("passed", 0)
-    total = passed + counts.get("failed", 0) + counts.get("error", 0) + counts.get("errors", 0)
-    return passed, total
+    failed = sum(counts.get(kind, 0) for kind in ("failed", "error", "errors"))
+    return passed, passed + failed
+
+
+def count_style_issues() -> int:
+    """Returns the count of lint findings plus files to reformat."""
+    lint = _run("ruff", "check", "--quiet", "--output-format", "concise")
+    unformatted = _run("ruff", "format", "--check", "--quiet")
+    return len(lint.splitlines()) + len(unformatted.splitlines())
 
 
 def main() -> None:
+    """Prints one line per level, then the style status."""
     current_found = False
-    for num, name, tests in LEVELS:
-        label = f"{num:>2}  {name}"
-        if num == 0:
+    for number, name, tests in LEVELS:
+        label = f"{number:>2}  {name}"
+        if number == 0:
             print(f"✓ {label}")
             continue
         if tests is None or not (ROOT / tests).exists():
-            print(f"· {label:<34} brief arrives when the previous level is done")
+            print(
+                f"· {label:<34} brief arrives when the previous level is done"
+            )
             continue
         passed, total = run_tests(tests)
         if total and passed == total:
             print(f"✓ {label:<34} {passed}/{total} tests")
         elif not current_found:
             current_found = True
-            brief = next(ROOT.glob(f"levels/{num:02d}-*.md"), None)
-            print(f"▶ {label:<34} {passed}/{total} tests   brief: {brief.relative_to(ROOT) if brief else '?'}")
+            brief = next(ROOT.glob(f"levels/{number:02d}-*.md"), None)
+            where = brief.relative_to(ROOT) if brief else "?"
+            print(f"▶ {label:<34} {passed}/{total} tests   brief: {where}")
         else:
             print(f"· {label:<34} {passed}/{total} tests")
+
+    issues = count_style_issues()
+    if issues:
+        print(f"\nstyle: {issues} issues (uv run ruff check; ruff format)")
+    else:
+        print("\nstyle: ✓ Google Python Style Guide (ruff)")
 
 
 if __name__ == "__main__":

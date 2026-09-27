@@ -18,4 +18,60 @@ build-backend = "uv_build"
 [dependency-groups]
 dev = [
     "pytest>=9.1.1",
+    "ruff>=0.16.9",
+]
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+typeCheckingMode = "standard"
+
+# Google Python Style Guide: https://google.github.io/styleguide/pyguide.html
+# Ruff checks the mechanical rules. Numbers refer to sections of the guide.
+[tool.ruff]
+line-length = 80  # 3.2
+indent-width = 4  # 3.4
+
+[tool.ruff.lint]
+select = [
+    "E", "W", "F",  # pycodestyle, pyflakes
+    "I",    # 3.13 import grouping and order
+    "N",    # 3.16 naming
+    "D",    # 3.8 docstrings (Google convention below)
+    "ANN",  # 3.19 annotate public APIs
+    "B",    # 2.12 mutable defaults, and other bug patterns
+    "BLE",  # 2.4 no catch-all except
+    "UP",   # 3.19.5 `X | None`, built-in generics
+    "ICN",  # 2.2 import modules, not names (see banned-from)
+    "TID",  # 2.3 absolute imports only
+    "PLC",  # 2.14 `if seq:` not `if len(seq):`; 3.13 imports at the top
+    "PLE", "PLW",
+]
+ignore = [
+    "ANN204",  # 3.19.1 no need to annotate __init__'s return value
+    "D105", "D107",  # dunder methods need no docstring (Google pylintrc)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D100", "D103", "ANN"]  # test functions need no docstring
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.isort]
+force-single-line = true  # 3.13 one import per line...
+single-line-exclusions = ["typing", "collections.abc"]  # ...except these
+force-sort-within-sections = true  # sorted by module path, ignoring case
+known-first-party = ["llm"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.lint.flake8-import-conventions]
+# 2.2: `import collections` then `collections.Counter`, not
+# `from collections import Counter`. typing and collections.abc are exempt.
+banned-from = [
+    "collections", "dataclasses", "functools", "itertools", "json", "math",
+    "os", "pathlib", "random", "re", "regex", "subprocess", "sys", "tiktoken",
+    "time", "llm.tokenizer",
 ]

@@ -4,7 +4,7 @@ Build a GPT from an empty file up to GRPO, one verified level at a time.
 
 Every level ends with a **proof**: tests that pass only if the thing actually works. Two of them are the backbone of the whole project. Your GPT-2 must reproduce OpenAI's logits, and your Qwen3 must reproduce Hugging Face's. A level is unlocked when its tests pass *and* you can explain what you built without looking.
 
-No inference engines, no `transformers` in the implementation. Plain PyTorch. Reference libraries (`tiktoken`, `transformers`) appear only inside tests, as answer keys.
+No inference engines, no `transformers` in the implementation. Plain PyTorch. Reference libraries (`tiktoken`, `transformers`) are answer keys in the tests. Outside tests they only supply data, such as GPT-2's vocabulary and pretrained weights.
 
 ## The ladder
 
@@ -27,6 +27,7 @@ No inference engines, no `transformers` in the implementation. Plain PyTorch. Re
 - **Tests are the proof.** Each level has a brief in `levels/` and a test file in `tests/`. The brief says what to build and why. The tests say whether you did.
 - **Core math by hand.** Attention, norms, losses and update rules get written without an AI assistant. Plumbing (data loading, logging, scripts) can be AI-assisted, but every line gets reviewed.
 - **Questions before code.** Each brief opens with questions to answer before writing anything, and ends with follow-ups to answer out loud once the tests pass.
+- **Google Python style.** Code follows the [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html). Ruff checks the mechanical parts (80 columns, import order, naming, Google docstrings, type annotations), configured in `pyproject.toml` with the guide's section numbers. The rest is on you: import modules rather than names (`import collections`, then `collections.Counter`), use descriptive names, and keep functions short.
 - **Briefs appear one level at a time.** Later levels are written once the earlier ones are done, so they can build on what actually got built.
 
 ## Running
@@ -35,6 +36,7 @@ No inference engines, no `transformers` in the implementation. Plain PyTorch. Re
 uv sync
 uv run python ladder.py            # where am I?
 uv run pytest tests/test_level01_tokenizer.py
+uv run ruff check && uv run ruff format --check   # style
 ```
 
 ## Layout
