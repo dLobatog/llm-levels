@@ -13,7 +13,7 @@ No inference engines, no `transformers` in the implementation. Plain PyTorch. Re
 | 0 | Setup | the repo, dependencies, this ladder | `python ladder.py` runs |
 | 1 | Tokenizer | byte-level BPE: training, encoding, decoding | exact match with `tiktoken`'s GPT-2 ids on hundreds of strings |
 | 2 | Data and the training loop | next-token windows, batching, a bigram model | initial loss ≈ ln(vocab), then it drops |
-| 3 | Attention | one head, causal mask, multi-head via reshapes | matches `scaled_dot_product_attention`; output *t* has zero gradient from tokens after *t* |
+| 3 | Attention | one head, causal mask, multi-head via reshapes, an attention language model | matches `scaled_dot_product_attention`; output *t* has zero gradient from tokens after *t*; beats the best possible bigram |
 | 4 | GPT-2 | LayerNorm, GELU, MLP, residuals, positions, weight tying, sampling | exactly 124M parameters; OpenAI's weights in *your* model give Hugging Face's logits |
 | 5 | Pretraining | AdamW, warmup + cosine, clipping, eval, checkpoints | overfits one batch; a small GPT writes coherent TinyStories |
 | 6 | Inference and modern blocks | KV cache, batched generation, RoPE, RMSNorm, SwiGLU, GQA | cached output = uncached output; Qwen3-0.6B in your code matches Hugging Face |
