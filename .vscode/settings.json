@@ -18,17 +18,28 @@
   "python.testing.unittestEnabled": false,
   "python.testing.pytestArgs": ["tests"],
 
-  // Debugging steps through your code, not PyTorch's.
+  // Debugging steps through your code, not PyTorch's, and shows values next
+  // to the code. The debug configurations turn on lovely-tensors, so a tensor
+  // reads as `tensor[2, 5, 30] n=300 x∈[-2.6, 3.4] μ=0.007 σ=0.93`.
   "debugpy.debugJustMyCode": true,
+  "debug.inlineValues": "on",
+
+  // Ops the Apple GPU (MPS) doesn't support fall back to the CPU.
+  "terminal.integrated.env.osx": { "PYTORCH_ENABLE_MPS_FALLBACK": "1" },
 
   // `# %%` cells run in the Interactive Window. Shift+Enter sends the line
   // or selection. Your modules are imported and reload when you edit them.
   "jupyter.interactiveWindow.creationMode": "single",
+  "jupyter.notebookFileRoot": "${workspaceFolder}",
   "jupyter.interactiveWindow.textEditor.executeSelection": true,
   "jupyter.runStartupCommands": [
     "%load_ext autoreload",
     "%autoreload 2",
+    "%load_ext pyinstrument",
     "import torch",
+    "import lovely_tensors",
+    "lovely_tensors.monkey_patch()",
+    "torch.set_printoptions(precision=4, sci_mode=False, linewidth=110)",
     "from llm import tokenizer, data, bigram, training"
   ],
 
