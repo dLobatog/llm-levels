@@ -1,0 +1,31 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      // Starts when the folder opens (VS Code asks once to allow it): every
+      // save reruns the level you're on and stops at the first failure.
+      "label": "tests on save",
+      "type": "shell",
+      "command": "uv run ptw --now --clear --runner python --ignore-patterns '*/scratch/*,*/.venv/*' . ladder.py --current",
+      "isBackground": true,
+      "problemMatcher": [],
+      "runOptions": { "runOn": "folderOpen" },
+      "presentation": { "reveal": "always", "panel": "dedicated", "focus": false }
+    },
+    {
+      // Tasks: Run Test Task
+      "label": "ladder",
+      "type": "shell",
+      "command": "uv run python ladder.py",
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "ruff: fix and format",
+      "type": "shell",
+      "command": "uv run ruff check --fix . && uv run ruff format .",
+      "problemMatcher": []
+    }
+  ]
+}

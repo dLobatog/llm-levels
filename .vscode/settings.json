@@ -1,0 +1,48 @@
+{
+  // Python from the uv environment (run `uv sync` once).
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.importFormat": "absolute",
+
+  // Ruff formats and sorts imports on save, with the Google-style config in
+  // pyproject.toml. Column 80 is the limit.
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": { "source.organizeImports.ruff": "explicit" },
+    "editor.rulers": [80]
+  },
+
+  // Tests: pytest, from tests/. Run or debug any test from the gutter.
+  "python.testing.pytestEnabled": true,
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestArgs": ["tests"],
+
+  // Debugging steps through your code, not PyTorch's.
+  "debugpy.debugJustMyCode": true,
+
+  // `# %%` cells run in the Interactive Window. Shift+Enter sends the line
+  // or selection. Your modules are imported and reload when you edit them.
+  "jupyter.interactiveWindow.creationMode": "single",
+  "jupyter.interactiveWindow.textEditor.executeSelection": true,
+  "jupyter.runStartupCommands": [
+    "%load_ext autoreload",
+    "%autoreload 2",
+    "import torch",
+    "from llm import tokenizer, data, bigram, training"
+  ],
+
+  // The point of llm-levels is writing the code yourself: no inline AI
+  // suggestions in this folder. Chat still works for questions.
+  "editor.inlineSuggest.enabled": false,
+  "github.copilot.enable": { "*": false },
+
+  "errorLens.enabledDiagnosticLevels": ["error", "warning"],
+  "editor.inlayHints.enabled": "offUnlessPressed",
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    "**/.ruff_cache": true
+  },
+  "search.exclude": { "**/.venv": true, "uv.lock": true }
+}
