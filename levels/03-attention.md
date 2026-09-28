@@ -43,6 +43,10 @@ The tests check:
 
 About that last number: the model trains and is measured on the same 946 bytes, so part of what it learns is memorization. The test shows the model *uses context*. Whether it *generalizes* needs text it hasn't seen, which is level 5's job.
 
+## See it
+
+Once the tests pass, run [`labs/03_attention.py`](../labs/03_attention.py) a cell at a time: averaging the past three ways, the reshape dance on the numbers 0–31, your heads against a plain loop, your model's loss against the best possible bigram, heatmaps of where each of your heads looks, and what happens without the mask or without positions.
+
 ## Hints (read only if stuck)
 
 <details><summary>The mask</summary>
