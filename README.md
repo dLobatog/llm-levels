@@ -24,6 +24,7 @@ No inference engines, no `transformers` in the implementation. Plain PyTorch. Re
 
 ## How it works
 
+- **Labs show it working.** `labs/NN_*.py` runs *your* code and shows what the tests only check: shapes, weights changing during training, samples. Run a cell at a time: `<leader>rc` in Neovim, Shift+Enter in VS Code, or the whole file with `uv run python labs/02_bigram.py`. Each cell asks you to predict the result first.
 - **Tests are the proof.** Each level has a brief in `levels/` and a test file in `tests/`. The brief says what to build and why. The tests say whether you did.
 - **Core math by hand.** Attention, norms, losses and update rules get written without an AI assistant. Plumbing (data loading, logging, scripts) can be AI-assisted, but every line gets reviewed.
 - **Questions before code.** Each brief opens with questions to answer before writing anything, and ends with follow-ups to answer out loud once the tests pass.
@@ -45,6 +46,7 @@ uv run ruff check && uv run ruff format --check   # style
 
 ```
 levels/   one brief per level
+labs/     one lab per level: your code, visualized
 src/llm/  your implementation (starts as stubs with exact contracts)
 tests/    the proofs
 ladder.py progress

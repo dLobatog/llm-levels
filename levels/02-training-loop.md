@@ -40,6 +40,10 @@ The tests check:
 - **the model:** the untrained loss is ln(V) ± 0.05, the loss equals the mean negative log-likelihood, the prediction depends only on the current token, and generation keeps the prompt and is reproducible;
 - **training:** on a repeating sequence the loss starts at ln(V) and falls below 0.05, and the trained model follows the cycle. On a paragraph of English it gets within 0.05 nats of **the best loss any bigram can reach**, computed by counting pairs.
 
+## See it
+
+Once the tests pass, run [`labs/02_bigram.py`](../labs/02_bigram.py) a cell at a time: your batches as text, the table filling in over training, the loss curve against the best possible bigram, and sampled vs greedy text.
+
 ## Hints (read only if stuck)
 
 <details><summary>The table</summary>
