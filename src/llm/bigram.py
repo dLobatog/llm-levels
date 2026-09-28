@@ -25,7 +25,12 @@ class Bigram(nn.Module):
             vocab_size: Number of distinct token ids.
         """
         super().__init__()
-        raise NotImplementedError
+        self.vocab_size = vocab_size
+        self.embeddings = nn.Embedding(
+            num_embeddings=vocab_size, embedding_dim=vocab_size
+        )
+        self.loss = nn.CrossEntropyLoss()
+        nn.init.zeros_(self.embeddings.weight)
 
     def forward(
         self,
@@ -44,8 +49,15 @@ class Bigram(nn.Module):
             `loss` is the mean cross-entropy over all positions, or None when
             no targets are given.
         """
-        raise NotImplementedError
+        logits = self.embeddings(ids)  # (B, T, D)
+        loss = None
+        if targets is not None:
+            reshaped_logits = logits.reshape(-1, self.vocab_size)
+            loss = self.loss(reshaped_logits, targets.reshape(-1))
 
+        return logits, loss
+
+    @torch.no_grad
     def generate(
         self,
         ids: torch.Tensor,
@@ -64,4 +76,13 @@ class Bigram(nn.Module):
             Long tensor of shape `(batch, time + max_new_tokens)` that starts
             with `ids`. No gradients are tracked.
         """
-        raise NotImplementedError
+        for _ in range(max_new_tokens):
+            logits, loss = self.forward(ids=ids)  # (B, T, V)
+            last = logits[:, -1, :]  # (B, V) for every row
+            probs = torch.softmax(input=last, dim=-1)  # (B, T)
+            next_id = torch.multinomial(
+                input=probs, num_samples=1, generator=generator
+            )  # (B, 1)
+            ids = torch.cat((ids, next_id), dim=1)
+
+        return ids

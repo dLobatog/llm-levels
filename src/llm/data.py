@@ -34,4 +34,15 @@ def get_batch(
     Raises:
         ValueError: If `ids` is too short to hold one window and its targets.
     """
-    raise NotImplementedError
+    if len(ids) <= context_length:
+        raise ValueError
+
+    start = torch.randint(
+        0, len(ids) - context_length, (batch_size,), generator=generator
+    )
+    x_list, y_list = [], []
+    for s in start.tolist():
+        x_list.append(ids[s : s + context_length])
+        y_list.append(ids[s + 1 : s + 1 + context_length])
+
+    return torch.stack(x_list), torch.stack(y_list)

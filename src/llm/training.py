@@ -9,6 +9,8 @@ Typical usage example:
 import torch
 from torch import nn
 
+from llm import data
+
 
 def train(
     model: nn.Module,
@@ -37,4 +39,14 @@ def train(
     Returns:
         The loss at every step, as Python floats, in order.
     """
-    raise NotImplementedError
+    optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
+    losses = []
+    for _ in range(steps):
+        x, y = data.get_batch(ids, batch_size, context_length, generator)
+        _, loss = model(x, y)
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        losses.append(loss.item())
+
+    return losses
