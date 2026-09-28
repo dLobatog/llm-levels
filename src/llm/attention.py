@@ -9,6 +9,7 @@ Typical usage example:
 """
 
 import torch
+from torch import math
 from torch import nn
 
 
@@ -35,7 +36,17 @@ def attention(
     Returns:
         Tensor of shape `(..., T, head_dim)`.
     """
-    raise NotImplementedError
+    head_dim = q.shape[-1]
+
+    scores = (q @ k.transpose(-2, -1)) / math.sqrt(head_dim)  #  (.., T, T)
+    if causal:
+        t = scores.shape[-1]
+        allowed = torch.ones(t, t, dtype=torch.bool).tril()
+        scores = scores.masked_fill(~allowed, float("-inf"))
+    weights = torch.softmax(scores, dim=-1)  #  (.., T, T)
+    out = weights @ v  # (.. T, head_dim)
+
+    return out
 
 
 class CausalSelfAttention(nn.Module):
@@ -59,7 +70,12 @@ class CausalSelfAttention(nn.Module):
             ValueError: If `n_heads` does not divide `d_model`.
         """
         super().__init__()
-        raise NotImplementedError
+        if d_model % n_heads != 0:
+            raise ValueError
+        self.d_model = d_model
+        self.n_heads = n_heads
+        self.qkv = nn.Linear(in_features=d_model, out_features=3 * d_model)
+        self.proj = nn.Linear(in_features=d_model, out_features=d_model)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Mixes each position with the earlier ones.
@@ -75,7 +91,24 @@ class CausalSelfAttention(nn.Module):
         Returns:
             Tensor of shape `(B, T, d_model)`.
         """
-        raise NotImplementedError
+        qkv = self.qkv(x)  # (B, T, D)
+        D = self.d_model
+        B, T, _ = qkv.shape
+        H = self.n_heads
+        q, k, v = qkv.split(self.d_model, dim=-1)  # (B, T, D) (x3)
+        q = q.view(B, T, H, D // H)  # (B, T, H, D)
+        k = k.view(B, T, H, D // H)  # (B, T, H, D)
+        v = v.view(B, T, H, D // H)  # (B, T, H, D)
+        q = q.transpose(1, 2)  # (B, H, T, D)
+        k = k.transpose(1, 2)  # (B, H, T, D)
+        v = v.transpose(1, 2)  # (B, H, T, D)
+
+        out = attention(q, k, v, causal=True)  # (B, H, T , D)
+        out = out.transpose(1, 2)  # B, T, H, D
+        out = out.reshape((B, T, D))
+        out = self.proj(out)
+
+        return out
 
 
 class AttentionLM(nn.Module):
@@ -103,7 +136,22 @@ class AttentionLM(nn.Module):
                 embedding per position.
         """
         super().__init__()
-        raise NotImplementedError
+        self.vocab_size = vocab_size
+        self.d_model = d_model
+        self.n_heads = n_heads
+        self.context_length = context_length
+        self.position_embeddings = nn.Embedding(
+            num_embeddings=context_length, embedding_dim=d_model
+        )
+        self.embeddings = nn.Embedding(
+            num_embeddings=vocab_size, embedding_dim=d_model
+        )
+        self.attn = CausalSelfAttention(d_model=d_model, n_heads=n_heads)
+        self.head = nn.Linear(
+            out_features=vocab_size,
+            in_features=d_model,
+        )
+        self.loss = nn.CrossEntropyLoss()
 
     def forward(
         self,
@@ -122,8 +170,23 @@ class AttentionLM(nn.Module):
         Raises:
             ValueError: If `T` is longer than `context_length`.
         """
-        raise NotImplementedError
+        B, T = ids.shape
+        if T > self.context_length:
+            raise ValueError("Sequence length larger than context length")
+        positions = torch.arange(T, device=ids.device)  # 0, 1, …, T-1
+        out = self.embeddings(ids)
+        out = out + self.position_embeddings(positions)  # (B,T,d) + (T,d)
+        out = self.attn(out)
+        logits = self.head(out)
+        loss = None
+        if targets is not None:
+            reshaped_logits = logits.reshape(-1, self.vocab_size)
+            targets = targets.reshape(-1)
+            loss = self.loss(reshaped_logits, targets)
 
+        return (logits, loss)
+
+    @torch.no_grad()
     def generate(
         self,
         ids: torch.Tensor,
@@ -144,4 +207,13 @@ class AttentionLM(nn.Module):
             Long tensor of shape `(B, T + max_new_tokens)` that starts with
             `ids`. No gradients are tracked.
         """
-        raise NotImplementedError
+        for _ in range(max_new_tokens):
+            logits, _ = self(ids[:, -self.context_length :])
+            last = logits[:, -1, :]  # (B, V) for every row
+            probs = torch.softmax(input=last, dim=-1)  # (B, T)
+            next_id = torch.multinomial(
+                input=probs, num_samples=1, generator=generator
+            )  # (B, 1)
+            ids = torch.cat((ids, next_id), dim=1)
+
+        return ids
