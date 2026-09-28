@@ -5,7 +5,8 @@ checked by ruff with the configuration in pyproject.toml.
 
 Typical usage example:
 
-    uv run python ladder.py
+    uv run python ladder.py            # the whole ladder
+    uv run python ladder.py --current  # just the level you're on, in detail
 """
 
 import pathlib
@@ -49,11 +50,45 @@ def run_tests(path: str) -> tuple[int, int]:
         The number of tests that passed and the total number of tests.
     """
     out = _run("pytest", "-q", "--no-header", "-p", "no:cacheprovider", path)
+    passed, failed = _count(out)
+    return passed, passed + failed
+
+
+def _count(out: str) -> tuple[int, int]:
+    """Returns (passed, failed or errored) from pytest's summary line."""
     pattern = r"(\d+) (passed|failed|error|errors)"
     counts = {kind: int(count) for count, kind in re.findall(pattern, out)}
-    passed = counts.get("passed", 0)
     failed = sum(counts.get(kind, 0) for kind in ("failed", "error", "errors"))
-    return passed, passed + failed
+    return counts.get("passed", 0), failed
+
+
+def run_current() -> None:
+    """Shows pytest's output for the first level that doesn't pass yet.
+
+    Earlier levels are rerun too, so a regression there takes focus. Stops at
+    the first failure, which keeps the output short enough to read.
+    """
+    for number, name, tests in LEVELS:
+        if tests is None or not (ROOT / tests).exists():
+            continue
+        out = _run(
+            "pytest",
+            "-q",
+            "--no-header",
+            "-p",
+            "no:cacheprovider",
+            "--tb=short",
+            "--color=yes",
+            "-x",
+            tests,
+        )
+        passed, failed = _count(out)
+        if failed or not passed:
+            print(f"▶ level {number} · {name}\n")
+            print(out)
+            return
+        print(f"✓ level {number} · {name}  ({passed} tests)")
+    print("\nevery level with tests passes: time for the next brief")
 
 
 def count_style_issues() -> int:
@@ -95,4 +130,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    if sys.argv[1:] == ["--current"]:
+        run_current()
+    else:
+        main()

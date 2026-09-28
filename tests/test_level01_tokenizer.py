@@ -58,6 +58,12 @@ TRAIN_TEXT = (
 ) * 20
 
 
+@pytest.fixture(scope="module")
+def trained():
+    """One tokenizer trained on TRAIN_TEXT, shared by the tests that read it."""
+    return tokenizer.BPETokenizer.train(TRAIN_TEXT, vocab_size=300)
+
+
 # Training ─────────────────────────────────────────────────────────────────────
 
 
@@ -81,15 +87,15 @@ def test_first_merge_is_the_most_frequent_pair():
     )
 
 
-def test_training_reaches_the_requested_vocab_size():
-    bpe = tokenizer.BPETokenizer.train(TRAIN_TEXT, vocab_size=300)
+def test_training_reaches_the_requested_vocab_size(trained):
+    bpe = trained
     assert bpe.vocab_size == 300
 
 
-def test_merges_never_cross_chunk_boundaries():
+def test_merges_never_cross_chunk_boundaries(trained):
     # With the GPT-2 split, " cat" and "." are different chunks, so no token
     # may contain both a letter and ".".
-    bpe = tokenizer.BPETokenizer.train(TRAIN_TEXT, vocab_size=300)
+    bpe = trained
     for token_id in range(256, 300):
         piece = bpe.decode([token_id])
         has_letter = any(char.isalpha() for char in piece)
@@ -109,8 +115,8 @@ def test_training_compresses_the_text():
 
 
 @pytest.mark.parametrize("text", HAND_PICKED)
-def test_trained_tokenizer_round_trips_unseen_text(text):
-    bpe = tokenizer.BPETokenizer.train(TRAIN_TEXT, vocab_size=300)
+def test_trained_tokenizer_round_trips_unseen_text(trained, text):
+    bpe = trained
     assert bpe.decode(bpe.encode(text)) == text
 
 

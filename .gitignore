@@ -6,3 +6,4 @@ data/
 checkpoints/
 runs/
 .DS_Store
+scratch/

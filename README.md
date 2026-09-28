@@ -35,6 +35,8 @@ No inference engines, no `transformers` in the implementation. Plain PyTorch. Re
 ```bash
 uv sync
 uv run python ladder.py            # where am I?
+uv run python ladder.py --current  # the level you're on, stopping at the first failure
+uv run ptw --now --runner python . ladder.py --current   # the same, rerun on every save
 uv run pytest tests/test_level01_tokenizer.py
 uv run ruff check && uv run ruff format --check   # style
 ```
