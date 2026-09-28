@@ -65,6 +65,12 @@ ignore = [
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
+[tool.ruff.lint.pep8-naming]
+# 3.16.4: short names that match established math notation are fine when the
+# convention is documented. Tensor shape letters: B batch, T time (positions),
+# C or D width, H heads, V vocabulary.
+extend-ignore-names = ["B", "T", "C", "D", "H", "V"]
+
 [tool.ruff.lint.isort]
 force-single-line = true  # 3.13 one import per line...
 single-line-exclusions = ["typing", "collections.abc"]  # ...except these
